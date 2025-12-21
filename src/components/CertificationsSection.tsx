@@ -2,35 +2,10 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { Award, ExternalLink } from "lucide-react";
+import { useCertifications } from "@/hooks/useSanityData";
+import { Certification } from "@/lib/sanity";
 
-const certifications = [
-  {
-    name: "Certified SolidWorks Professional",
-    issuer: "Dassault Systèmes",
-    year: "2023",
-    id: "CSWP-2023-4521",
-  },
-  {
-    name: "AutoCAD Professional Certificate",
-    issuer: "Autodesk",
-    year: "2022",
-    id: "ACP-CAD-7892",
-  },
-  {
-    name: "CATIA V5 Mechanical Design",
-    issuer: "Dassault Systèmes",
-    year: "2023",
-    id: "CATIA-MD-3456",
-  },
-  {
-    name: "Fusion 360 CAD/CAM Specialist",
-    issuer: "Autodesk",
-    year: "2024",
-    id: "F360-CAM-1234",
-  },
-];
-
-const CertificationCard = ({ cert, index }: { cert: typeof certifications[0]; index: number }) => {
+const CertificationCard = ({ cert, index }: { cert: Certification; index: number }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
 
@@ -51,22 +26,31 @@ const CertificationCard = ({ cert, index }: { cert: typeof certifications[0]; in
       <div className="flex-grow space-y-2">
         <div className="flex items-start justify-between gap-4">
           <h3 className="font-heading font-semibold text-lg text-foreground">
-            {cert.name}
+            {cert.title}
           </h3>
           <span className="text-accent font-heading font-bold text-lg flex-shrink-0">
             {cert.year}
           </span>
         </div>
         <p className="text-muted-foreground">{cert.issuer}</p>
-        <p className="text-xs text-muted-foreground/70 font-mono">ID: {cert.id}</p>
+        {cert.credentialId && (
+          <p className="text-xs text-muted-foreground/70 font-mono">ID: {cert.credentialId}</p>
+        )}
       </div>
 
       {/* View Link */}
-      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <div className="w-10 h-10 border border-border flex items-center justify-center hover:border-accent transition-colors cursor-pointer">
-          <ExternalLink size={16} className="text-muted-foreground" />
-        </div>
-      </div>
+      {cert.credentialUrl && (
+        <a
+          href={cert.credentialUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        >
+          <div className="w-10 h-10 border border-border flex items-center justify-center hover:border-accent transition-colors cursor-pointer">
+            <ExternalLink size={16} className="text-muted-foreground" />
+          </div>
+        </a>
+      )}
     </motion.div>
   );
 };
@@ -74,6 +58,7 @@ const CertificationCard = ({ cert, index }: { cert: typeof certifications[0]; in
 const CertificationsSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { data: certifications } = useCertifications();
 
   return (
     <section id="certifications" className="py-32 relative">
@@ -101,8 +86,8 @@ const CertificationsSection = () => {
 
         {/* Certifications Grid */}
         <div className="grid lg:grid-cols-2 gap-6">
-          {certifications.map((cert, index) => (
-            <CertificationCard key={cert.id} cert={cert} index={index} />
+          {certifications?.map((cert, index) => (
+            <CertificationCard key={cert._id} cert={cert} index={index} />
           ))}
         </div>
       </div>

@@ -1,7 +1,11 @@
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { useHeroContent, useSiteSettings } from "@/hooks/useSanityData";
 
 const HeroSection = () => {
+  const { data: heroContent } = useHeroContent();
+  const { data: settings } = useSiteSettings();
+
   return (
     <section
       id="home"
@@ -34,9 +38,9 @@ const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight"
             >
-              CAD
+              {heroContent?.title || settings?.name || "CAD"}
               <br />
-              <span className="text-gradient">Engineer</span>
+              <span className="text-gradient">{heroContent?.subtitle || "Engineer"}</span>
             </motion.h1>
 
             <motion.p
@@ -45,7 +49,7 @@ const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="text-xl md:text-2xl text-muted-foreground font-light max-w-lg"
             >
-              Engineering precision through CAD mastery.
+              {heroContent?.tagline || "Engineering precision through CAD mastery."}
             </motion.p>
 
             <motion.div
@@ -55,16 +59,16 @@ const HeroSection = () => {
               className="flex gap-4 pt-4"
             >
               <a
-                href="#portfolio"
+                href={heroContent?.ctaPrimary?.link || "#portfolio"}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-accent-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:bg-accent/90"
               >
-                View Work
+                {heroContent?.ctaPrimary?.text || "View Work"}
               </a>
               <a
-                href="#contact"
+                href={heroContent?.ctaSecondary?.link || "#contact"}
                 className="inline-flex items-center gap-2 px-8 py-4 border border-border text-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:border-accent hover:text-accent"
               >
-                Contact
+                {heroContent?.ctaSecondary?.text || "Contact"}
               </a>
             </motion.div>
           </div>

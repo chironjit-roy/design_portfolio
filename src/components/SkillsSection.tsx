@@ -1,20 +1,23 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Cpu, Layers, PenTool, Box, Settings, Ruler } from "lucide-react";
+import { Cpu, Layers, PenTool, Box, Settings, Ruler, LucideIcon } from "lucide-react";
+import { useSkills } from "@/hooks/useSanityData";
+import { Skill } from "@/lib/sanity";
 
-const skills = [
-  { name: "AutoCAD", level: 95, icon: PenTool, category: "2D Design" },
-  { name: "SolidWorks", level: 90, icon: Box, category: "3D Modeling" },
-  { name: "CATIA", level: 85, icon: Layers, category: "Surface Design" },
-  { name: "Fusion 360", level: 88, icon: Settings, category: "CAM/CAD" },
-  { name: "Inventor", level: 82, icon: Cpu, category: "Mechanical" },
-  { name: "Technical Drawing", level: 92, icon: Ruler, category: "Drafting" },
-];
+const iconMap: Record<string, LucideIcon> = {
+  "2D Design": PenTool,
+  "3D Modeling": Box,
+  "Surface Design": Layers,
+  "CAM/CAD": Settings,
+  "Mechanical": Cpu,
+  "Drafting": Ruler,
+};
 
-const SkillCard = ({ skill, index }: { skill: typeof skills[0]; index: number }) => {
+const SkillCard = ({ skill, index }: { skill: Skill; index: number }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const IconComponent = iconMap[skill.category] || Cpu;
 
   return (
     <motion.div
@@ -27,7 +30,7 @@ const SkillCard = ({ skill, index }: { skill: typeof skills[0]; index: number })
       {/* Icon and Category */}
       <div className="flex items-start justify-between mb-6">
         <div className="p-3 bg-secondary border border-border">
-          <skill.icon size={24} className="text-accent" />
+          <IconComponent size={24} className="text-accent" />
         </div>
         <span className="text-xs text-muted-foreground tracking-widest uppercase">
           {skill.category}
@@ -43,12 +46,12 @@ const SkillCard = ({ skill, index }: { skill: typeof skills[0]; index: number })
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Proficiency</span>
-          <span className="text-foreground font-medium">{skill.level}%</span>
+          <span className="text-foreground font-medium">{skill.proficiency}%</span>
         </div>
         <div className="h-1 bg-secondary overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={isInView ? { width: `${skill.level}%` } : {}}
+            animate={isInView ? { width: `${skill.proficiency}%` } : {}}
             transition={{ duration: 1.2, delay: index * 0.1 + 0.3, ease: "easeOut" }}
             className="h-full bg-accent"
           />
@@ -61,6 +64,7 @@ const SkillCard = ({ skill, index }: { skill: typeof skills[0]; index: number })
 const SkillsSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { data: skills } = useSkills();
 
   return (
     <section id="skills" className="py-32 relative">
@@ -88,8 +92,8 @@ const SkillsSection = () => {
 
         {/* Skills Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {skills.map((skill, index) => (
-            <SkillCard key={skill.name} skill={skill} index={index} />
+          {skills?.map((skill, index) => (
+            <SkillCard key={skill._id} skill={skill} index={index} />
           ))}
         </div>
       </div>

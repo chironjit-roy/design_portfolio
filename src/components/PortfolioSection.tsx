@@ -2,53 +2,27 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { ArrowUpRight, X } from "lucide-react";
+import { useProjects } from "@/hooks/useSanityData";
+import { urlFor, type Project } from "@/lib/sanity";
 
-const projects = [
-  {
-    id: 1,
-    title: "Industrial Gearbox Assembly",
-    category: "Mechanical Design",
-    description: "Complete 3D model and assembly of a high-torque industrial gearbox with precision tolerance specifications.",
-    problem: "Client needed a custom gearbox solution for heavy machinery applications.",
-    solution: "Designed a modular gearbox system with optimized gear ratios and thermal management.",
-    tools: ["SolidWorks", "AutoCAD"],
-  },
-  {
-    id: 2,
-    title: "Automotive Suspension System",
-    category: "Automotive Engineering",
-    description: "Full suspension geometry design with stress analysis and motion simulation.",
-    problem: "Performance vehicle required improved handling characteristics.",
-    solution: "Developed double-wishbone suspension with adjustable geometry parameters.",
-    tools: ["CATIA", "ANSYS"],
-  },
-  {
-    id: 3,
-    title: "Precision Tooling Fixture",
-    category: "Manufacturing",
-    description: "Custom fixture design for CNC machining operations with sub-millimeter accuracy.",
-    problem: "Existing fixtures caused positioning errors in production.",
-    solution: "Created modular fixture system with kinematic mounting principles.",
-    tools: ["Fusion 360", "MasterCAM"],
-  },
-  {
-    id: 4,
-    title: "Hydraulic Cylinder Design",
-    category: "Fluid Systems",
-    description: "Heavy-duty hydraulic cylinder for construction equipment applications.",
-    problem: "Standard cylinders failed under extreme operating conditions.",
-    solution: "Engineered reinforced cylinder with advanced seal technology.",
-    tools: ["Inventor", "AutoCAD"],
-  },
+const placeholderImages = [
+  "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&q=80",
+  "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80",
+  "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80",
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
 ];
 
 const ProjectCard = ({ project, index, onClick }: { 
-  project: typeof projects[0]; 
+  project: Project; 
   index: number;
   onClick: () => void;
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  const imageUrl = project.image?.asset?._ref
+    ? urlFor(project.image).width(800).height(600).url()
+    : placeholderImages[index % placeholderImages.length];
 
   return (
     <motion.div
@@ -59,19 +33,13 @@ const ProjectCard = ({ project, index, onClick }: {
       onClick={onClick}
       className="group cursor-pointer"
     >
-      {/* Image Placeholder */}
+      {/* Image */}
       <div className="aspect-[4/3] bg-secondary border border-border mb-6 overflow-hidden relative">
-        <div className="absolute inset-0 grid-pattern opacity-20" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-4xl font-heading font-bold text-muted-foreground/30">
-              0{project.id}
-            </div>
-            <div className="text-xs text-muted-foreground tracking-widest mt-2 uppercase">
-              {project.category}
-            </div>
-          </div>
-        </div>
+        <img
+          src={imageUrl}
+          alt={project.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
         
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex items-center justify-center">
@@ -97,10 +65,15 @@ const ProjectCard = ({ project, index, onClick }: {
   );
 };
 
-const ProjectModal = ({ project, onClose }: { 
-  project: typeof projects[0]; 
+const ProjectModal = ({ project, onClose, index }: { 
+  project: Project; 
   onClose: () => void;
+  index: number;
 }) => {
+  const imageUrl = project.image?.asset?._ref
+    ? urlFor(project.image).width(1200).url()
+    : placeholderImages[index % placeholderImages.length];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -136,43 +109,57 @@ const ProjectModal = ({ project, onClose }: {
         {/* Content */}
         <div className="p-8 space-y-8">
           {/* Preview */}
-          <div className="aspect-video bg-secondary border border-border grid-pattern opacity-40" />
+          <div className="aspect-video overflow-hidden border border-border">
+            <img
+              src={imageUrl}
+              alt={project.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
 
           {/* Description */}
           <p className="text-muted-foreground text-lg">{project.description}</p>
 
           {/* Problem & Solution */}
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
-                Problem
-              </h4>
-              <p className="text-muted-foreground">{project.problem}</p>
+          {(project.problem || project.solution) && (
+            <div className="grid md:grid-cols-2 gap-8">
+              {project.problem && (
+                <div className="space-y-3">
+                  <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
+                    Problem
+                  </h4>
+                  <p className="text-muted-foreground">{project.problem}</p>
+                </div>
+              )}
+              {project.solution && (
+                <div className="space-y-3">
+                  <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
+                    Solution
+                  </h4>
+                  <p className="text-muted-foreground">{project.solution}</p>
+                </div>
+              )}
             </div>
-            <div className="space-y-3">
-              <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
-                Solution
-              </h4>
-              <p className="text-muted-foreground">{project.solution}</p>
-            </div>
-          </div>
+          )}
 
           {/* Tools */}
-          <div className="space-y-3">
-            <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
-              Tools Used
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {project.tools.map((tool) => (
-                <span
-                  key={tool}
-                  className="px-4 py-2 bg-secondary border border-border text-sm"
-                >
-                  {tool}
-                </span>
-              ))}
+          {project.tools && project.tools.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
+                Tools Used
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {project.tools.map((tool) => (
+                  <span
+                    key={tool}
+                    className="px-4 py-2 bg-secondary border border-border text-sm"
+                  >
+                    {tool}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -182,7 +169,12 @@ const ProjectModal = ({ project, onClose }: {
 const PortfolioSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null);
+  const { data: projects } = useProjects();
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Only show featured projects on home page
+  const featuredProjects = projects?.filter(p => p.featured).slice(0, 4) || [];
 
   return (
     <section id="portfolio" className="py-32 relative">
@@ -210,12 +202,15 @@ const PortfolioSection = () => {
 
         {/* Projects Grid */}
         <div className="grid md:grid-cols-2 gap-12">
-          {projects.map((project, index) => (
+          {featuredProjects.map((project, index) => (
             <ProjectCard
-              key={project.id}
+              key={project._id}
               project={project}
               index={index}
-              onClick={() => setSelectedProject(project)}
+              onClick={() => {
+                setSelectedProject(project);
+                setSelectedIndex(index);
+              }}
             />
           ))}
         </div>
@@ -226,6 +221,7 @@ const PortfolioSection = () => {
         <ProjectModal
           project={selectedProject}
           onClose={() => setSelectedProject(null)}
+          index={selectedIndex}
         />
       )}
     </section>

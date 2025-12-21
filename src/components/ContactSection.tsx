@@ -3,11 +3,13 @@ import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { Mail, Linkedin, Github, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSanityData";
 
 const ContactSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { toast } = useToast();
+  const { data: settings } = useSiteSettings();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -25,10 +27,10 @@ const ContactSection = () => {
   };
 
   const socialLinks = [
-    { icon: Mail, href: "mailto:contact@engineer.com", label: "Email" },
-    { icon: Linkedin, href: "#", label: "LinkedIn" },
-    { icon: Github, href: "#", label: "GitHub" },
-  ];
+    { icon: Mail, href: settings?.email ? `mailto:${settings.email}` : "#", label: "Email" },
+    { icon: Linkedin, href: settings?.socialLinks?.linkedin || "#", label: "LinkedIn" },
+    { icon: Github, href: settings?.socialLinks?.github || "#", label: "GitHub" },
+  ].filter((link) => link.href !== "#");
 
   return (
     <section id="contact" className="py-32 relative">
@@ -51,7 +53,7 @@ const ContactSection = () => {
                 Let's Collaborate
               </h2>
               <p className="text-muted-foreground text-xl max-w-md">
-                Let's collaborate on engineering solutions.
+                {settings?.tagline || "Let's collaborate on engineering solutions."}
               </p>
             </div>
 
@@ -61,6 +63,8 @@ const ContactSection = () => {
                 <a
                   key={link.label}
                   href={link.href}
+                  target={link.label !== "Email" ? "_blank" : undefined}
+                  rel={link.label !== "Email" ? "noopener noreferrer" : undefined}
                   className="w-14 h-14 border border-border flex items-center justify-center hover:border-accent hover:bg-accent/10 transition-all duration-400"
                   aria-label={link.label}
                 >
