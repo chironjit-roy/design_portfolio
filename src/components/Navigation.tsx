@@ -44,7 +44,7 @@ const Navigation = () => {
               <span className="font-heading font-bold text-accent text-lg">E</span>
             </div>
             <span className="font-heading font-semibold text-foreground tracking-wide hidden sm:block">
-              ENGINEER
+              CHIRONJIT ROYS' PORTFOLIO
             </span>
           </Link>
 
