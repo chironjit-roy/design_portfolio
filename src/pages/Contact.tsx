@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Linkedin, Github, Twitter, Send, CheckCircle } from "lucide-react";
-import { useSiteSettings } from "@/hooks/useSanityData";
+import { useSiteSettings, usePageContent } from "@/hooks/useSanityData";
 import Footer from "@/components/Footer";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
 
 const Contact = () => {
-  const { data: settings } = useSiteSettings();
+  const { data: settings, isLoading } = useSiteSettings();
+  const { data: pageContent } = usePageContent("contact");
   const [formState, setFormState] = useState({
     name: "",
     email: "",
@@ -41,12 +43,40 @@ const Contact = () => {
     { name: "Twitter", icon: Twitter, url: settings?.socialLinks?.twitter },
   ].filter((link) => link.url);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <>
+        <PageSEO
+          fallbackTitle="Contact"
+          fallbackDescription="Get in touch"
+        />
+        <main className="pt-24 pb-16">
+          <EmptyState
+            title="No Contact Info"
+            message="Add site settings in Sanity CMS to display contact information."
+          />
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
-      <Helmet>
-        <title>Contact | {settings?.name || "CAD Engineer"}</title>
-        <meta name="description" content="Get in touch for CAD engineering projects, collaborations, or professional inquiries." />
-      </Helmet>
+      <PageSEO
+        seo={pageContent?.seo}
+        fallbackTitle={pageContent?.title || "Contact"}
+        fallbackDescription={pageContent?.description || "Get in touch"}
+        siteName={settings.name}
+      />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -56,13 +86,24 @@ const Contact = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <span className="section-number">GET IN TOUCH</span>
+            <span className="section-number">{pageContent?.subtitle || "GET IN TOUCH"}</span>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mt-4">
-              Let's <span className="text-gradient">Collaborate</span>
+              {pageContent?.title ? (
+                <>
+                  {pageContent.title.split(" ")[0]}{" "}
+                  <span className="text-gradient">{pageContent.title.split(" ").slice(1).join(" ")}</span>
+                </>
+              ) : (
+                <>
+                  Let's <span className="text-gradient">Collaborate</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              Have a project in mind or want to discuss engineering solutions? I'd love to hear from you.
-            </p>
+            {pageContent?.description && (
+              <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                {pageContent.description}
+              </p>
+            )}
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
@@ -76,7 +117,7 @@ const Contact = () => {
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-6">Contact Information</h2>
                 <div className="space-y-4">
-                  {settings?.email && (
+                  {settings.email && (
                     <a
                       href={`mailto:${settings.email}`}
                       className="flex items-center gap-4 p-4 bg-card border border-border hover:border-accent transition-colors group"
@@ -93,7 +134,7 @@ const Contact = () => {
                     </a>
                   )}
 
-                  {settings?.phone && (
+                  {settings.phone && (
                     <a
                       href={`tel:${settings.phone}`}
                       className="flex items-center gap-4 p-4 bg-card border border-border hover:border-accent transition-colors group"
@@ -110,7 +151,7 @@ const Contact = () => {
                     </a>
                   )}
 
-                  {settings?.location && (
+                  {settings.location && (
                     <div className="flex items-center gap-4 p-4 bg-card border border-border">
                       <div className="p-3 bg-accent/10 text-accent rounded">
                         <MapPin size={20} />

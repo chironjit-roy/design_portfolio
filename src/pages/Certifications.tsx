@@ -1,9 +1,10 @@
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Award, ExternalLink, Calendar } from "lucide-react";
-import { useCertifications, useSiteSettings } from "@/hooks/useSanityData";
+import { useCertifications, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
 import { urlFor } from "@/lib/sanity";
 import Footer from "@/components/Footer";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
 
 const CertificationCard = ({
   title,
@@ -36,11 +37,11 @@ const CertificationCard = ({
 
       {/* Certificate Image if available */}
       {image?.asset && (
-        <div className="mb-4 overflow-hidden border border-border">
+        <div className="mb-4 overflow-hidden border border-border bg-secondary flex items-center justify-center h-40">
           <img
-            src={urlFor(image).width(400).height(300).url()}
+            src={urlFor(image).width(400).url()}
             alt={title}
-            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500"
+            className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500"
           />
         </div>
       )}
@@ -78,13 +79,16 @@ const CertificationCard = ({
 const Certifications = () => {
   const { data: certifications, isLoading } = useCertifications();
   const { data: settings } = useSiteSettings();
+  const { data: pageContent } = usePageContent("certifications");
 
   return (
     <>
-      <Helmet>
-        <title>Certifications | {settings?.name || "CAD Engineer"}</title>
-        <meta name="description" content="View my professional certifications in CAD software, engineering, and industry standards." />
-      </Helmet>
+      <PageSEO
+        seo={pageContent?.seo}
+        fallbackTitle={pageContent?.title || "Certifications"}
+        fallbackDescription={pageContent?.description || "Professional certifications and credentials"}
+        siteName={settings?.name}
+      />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -94,43 +98,56 @@ const Certifications = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <span className="section-number">CERTIFICATION CENTER</span>
+            <span className="section-number">{pageContent?.subtitle || "CERTIFICATION CENTER"}</span>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mt-4">
-              Professional <span className="text-gradient">Credentials</span>
+              {pageContent?.title ? (
+                <>
+                  {pageContent.title.split(" ")[0]}{" "}
+                  <span className="text-gradient">{pageContent.title.split(" ").slice(1).join(" ")}</span>
+                </>
+              ) : (
+                <>
+                  Professional <span className="text-gradient">Credentials</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              Industry-recognized certifications that validate my expertise in CAD software, engineering practices, and professional standards.
-            </p>
+            {pageContent?.description && (
+              <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                {pageContent.description}
+              </p>
+            )}
           </motion.div>
 
           {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16"
-          >
-            {[
-              { label: "Total Certifications", value: certifications?.length || 0 },
-              { label: "CAD Certifications", value: certifications?.filter((c) => c.title.toLowerCase().includes("cad") || c.title.toLowerCase().includes("solidworks") || c.title.toLowerCase().includes("autocad") || c.title.toLowerCase().includes("catia")).length || 0 },
-              { label: "Years of Learning", value: "5+" },
-              { label: "Active Credentials", value: certifications?.length || 0 },
-            ].map((stat, index) => (
-              <div key={stat.label} className="bg-card border border-border p-6 text-center">
-                <div className="text-3xl font-heading font-bold text-accent">{stat.value}</div>
-                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div>
+          {certifications && certifications.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16"
+            >
+              {[
+                { label: "Total Certifications", value: certifications.length },
+                { label: "CAD Certifications", value: certifications.filter((c) => c.title.toLowerCase().includes("cad") || c.title.toLowerCase().includes("solidworks") || c.title.toLowerCase().includes("autocad") || c.title.toLowerCase().includes("catia")).length },
+                { label: "Years of Learning", value: "5+" },
+                { label: "Active Credentials", value: certifications.length },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-card border border-border p-6 text-center">
+                  <div className="text-3xl font-heading font-bold text-accent">{stat.value}</div>
+                  <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                </div>
+              ))}
+            </motion.div>
+          )}
 
           {/* Certifications Grid */}
           {isLoading ? (
             <div className="flex justify-center">
               <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : certifications && certifications.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {certifications?.map((cert, index) => (
+              {certifications.map((cert, index) => (
                 <CertificationCard
                   key={cert._id}
                   title={cert.title}
@@ -142,6 +159,11 @@ const Certifications = () => {
                 />
               ))}
             </div>
+          ) : (
+            <EmptyState
+              title="No Certifications Added"
+              message="Add certifications in Sanity CMS to display them here."
+            />
           )}
         </div>
       </main>

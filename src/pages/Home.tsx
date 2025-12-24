@@ -1,23 +1,65 @@
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ChevronDown, ArrowRight } from "lucide-react";
-import { useHeroContent, useSiteSettings } from "@/hooks/useSanityData";
-import heroImage from "@/assets/hero-cad-render.png";
+import { useHeroContent, useSiteSettings, useQuickLinks } from "@/hooks/useSanityData";
+import { urlFor } from "@/lib/sanity";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
+import heroImageFallback from "@/assets/hero-cad-render.png";
 
 const Home = () => {
-  const { data: heroContent } = useHeroContent();
+  const { data: heroContent, isLoading: heroLoading } = useHeroContent();
   const { data: settings } = useSiteSettings();
+  const { data: quickLinks } = useQuickLinks();
+
+  // Default quick links if none in Sanity
+  const defaultQuickLinks = [
+    { _id: "1", title: "Skills", description: "Technical expertise & tools", link: "/skills", order: 1 },
+    { _id: "2", title: "Designs", description: "CAD projects & portfolio", link: "/designs", order: 2 },
+    { _id: "3", title: "Certifications", description: "Professional credentials", link: "/certifications", order: 3 },
+  ];
+
+  const displayQuickLinks = quickLinks && quickLinks.length > 0 ? quickLinks : defaultQuickLinks;
+
+  // Get hero image URL from Sanity or use fallback
+  const heroImageUrl = heroContent?.heroImage?.asset?._ref
+    ? urlFor(heroContent.heroImage).width(800).url()
+    : heroImageFallback;
+
+  if (heroLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!heroContent) {
+    return (
+      <>
+        <PageSEO
+          fallbackTitle="Portfolio"
+          fallbackDescription="Portfolio website"
+          siteName={settings?.name}
+        />
+        <main className="pt-24 pb-16">
+          <EmptyState
+            title="No Content Yet"
+            message="Add hero content in Sanity CMS to display the home page."
+          />
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
-      <Helmet>
-        <title>{settings?.name || "CAD Engineer"} | Portfolio</title>
-        <meta
-          name="description"
-          content={heroContent?.subtitle || "Engineering precision through CAD mastery."}
-        />
-      </Helmet>
+      <PageSEO
+        seo={heroContent.seo}
+        fallbackTitle={heroContent.title}
+        fallbackDescription={heroContent.subtitle}
+        siteName={settings?.name}
+      />
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -39,7 +81,7 @@ const Home = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <span className="section-number">{heroContent?.tagline || "01 — INTRODUCTION"}</span>
+                <span className="section-number">{heroContent.tagline}</span>
               </motion.div>
 
               <motion.h1
@@ -48,9 +90,9 @@ const Home = () => {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight"
               >
-                {heroContent?.title?.split(" ")[0] || "CAD"}
+                {heroContent.title.split(" ")[0]}
                 <br />
-                <span className="text-gradient">{heroContent?.title?.split(" ").slice(1).join(" ") || "Engineer"}</span>
+                <span className="text-gradient">{heroContent.title.split(" ").slice(1).join(" ")}</span>
               </motion.h1>
 
               <motion.p
@@ -59,7 +101,7 @@ const Home = () => {
                 transition={{ duration: 0.8, delay: 0.6 }}
                 className="text-xl md:text-2xl text-muted-foreground font-light max-w-lg"
               >
-                {heroContent?.subtitle || "Engineering precision through CAD mastery."}
+                {heroContent.subtitle}
               </motion.p>
 
               <motion.div
@@ -69,16 +111,16 @@ const Home = () => {
                 className="flex gap-4 pt-4"
               >
                 <Link
-                  to="/designs"
+                  to={heroContent.ctaPrimary?.link || "/designs"}
                   className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-accent-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:bg-accent/90"
                 >
-                  {heroContent?.ctaPrimary?.text || "View Work"}
+                  {heroContent.ctaPrimary?.text || "View Work"}
                 </Link>
                 <Link
-                  to="/contact"
+                  to={heroContent.ctaSecondary?.link || "/contact"}
                   className="inline-flex items-center gap-2 px-8 py-4 border border-border text-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:border-accent hover:text-accent"
                 >
-                  {heroContent?.ctaSecondary?.text || "Contact"}
+                  {heroContent.ctaSecondary?.text || "Contact"}
                 </Link>
               </motion.div>
             </div>
@@ -94,8 +136,8 @@ const Home = () => {
                 {/* Image Frame */}
                 <div className="relative overflow-hidden border border-border">
                   <img
-                    src={heroImage}
-                    alt="3D CAD Engineering Render"
+                    src={heroImageUrl}
+                    alt={heroContent.heroImage?.alt || "Hero image"}
                     className="w-full h-auto object-cover"
                   />
                   {/* Overlay accent */}
@@ -142,13 +184,9 @@ const Home = () => {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { title: "Skills", description: "Technical expertise & tools", link: "/skills" },
-              { title: "Designs", description: "CAD projects & portfolio", link: "/designs" },
-              { title: "Certifications", description: "Professional credentials", link: "/certifications" },
-            ].map((item, index) => (
+            {displayQuickLinks.map((item, index) => (
               <motion.div
-                key={item.title}
+                key={item._id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

@@ -34,11 +34,11 @@ const ProjectCard = ({ project, index, onClick }: {
       className="group cursor-pointer"
     >
       {/* Image */}
-      <div className="aspect-[4/3] bg-secondary border border-border mb-6 overflow-hidden relative">
+      <div className="aspect-[4/3] bg-secondary border border-border mb-6 overflow-hidden relative flex items-center justify-center">
         <img
           src={imageUrl}
           alt={project.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500"
         />
         
         {/* Hover Overlay */}
@@ -109,11 +109,11 @@ const ProjectModal = ({ project, onClose, index }: {
         {/* Content */}
         <div className="p-8 space-y-8">
           {/* Preview */}
-          <div className="aspect-video overflow-hidden border border-border">
+          <div className="aspect-video overflow-hidden border border-border bg-secondary flex items-center justify-center">
             <img
               src={imageUrl}
               alt={project.title}
-              className="w-full h-full object-cover"
+              className="max-w-full max-h-full w-auto h-auto object-contain"
             />
           </div>
 

@@ -1,7 +1,8 @@
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { useSkills, useSiteSettings } from "@/hooks/useSanityData";
+import { useSkills, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
 import Footer from "@/components/Footer";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
 
 const SkillCard = ({
   name,
@@ -49,6 +50,7 @@ const SkillCard = ({
 const Skills = () => {
   const { data: skills, isLoading } = useSkills();
   const { data: settings } = useSiteSettings();
+  const { data: pageContent } = usePageContent("skills");
 
   // Group skills by category
   const groupedSkills = skills?.reduce(
@@ -63,10 +65,12 @@ const Skills = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Skills | {settings?.name || "CAD Engineer"}</title>
-        <meta name="description" content="Explore my technical skills in CAD software, engineering tools, and design capabilities." />
-      </Helmet>
+      <PageSEO
+        seo={pageContent?.seo}
+        fallbackTitle={pageContent?.title || "Skills"}
+        fallbackDescription={pageContent?.description || "Technical skills and expertise"}
+        siteName={settings?.name}
+      />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -76,13 +80,24 @@ const Skills = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <span className="section-number">TECHNICAL EXPERTISE</span>
+            <span className="section-number">{pageContent?.subtitle || "TECHNICAL EXPERTISE"}</span>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mt-4">
-              Skills & <span className="text-gradient">Proficiencies</span>
+              {pageContent?.title ? (
+                <>
+                  {pageContent.title.split(" ")[0]}{" "}
+                  <span className="text-gradient">{pageContent.title.split(" ").slice(1).join(" ")}</span>
+                </>
+              ) : (
+                <>
+                  Skills & <span className="text-gradient">Proficiencies</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              A comprehensive overview of my technical skills, tools, and engineering capabilities developed through years of hands-on experience.
-            </p>
+            {pageContent?.description && (
+              <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                {pageContent.description}
+              </p>
+            )}
           </motion.div>
 
           {/* Skills by Category */}
@@ -90,7 +105,7 @@ const Skills = () => {
             <div className="flex justify-center">
               <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : skills && skills.length > 0 ? (
             <div className="space-y-12">
               {groupedSkills &&
                 Object.entries(groupedSkills).map(([category, categorySkills], categoryIndex) => (
@@ -119,6 +134,11 @@ const Skills = () => {
                   </motion.div>
                 ))}
             </div>
+          ) : (
+            <EmptyState
+              title="No Skills Added"
+              message="Add skills in Sanity CMS to display them here."
+            />
           )}
         </div>
       </main>

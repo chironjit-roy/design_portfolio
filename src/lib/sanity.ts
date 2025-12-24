@@ -2,7 +2,6 @@ import { createClient } from "@sanity/client";
 import imageUrlBuilder from "@sanity/image-url";
 
 // Sanity client configuration
-// Replace these with your actual Sanity project details
 export const sanityClient = createClient({
   projectId: import.meta.env.VITE_SANITY_PROJECT_ID || "your-project-id",
   dataset: import.meta.env.VITE_SANITY_DATASET || "production",
@@ -15,7 +14,7 @@ const builder = imageUrlBuilder(sanityClient);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function urlFor(source: any) {
-  return builder.image(source);
+  return builder.image(source).fit("max").auto("format");
 }
 
 // Types for Sanity content
@@ -26,6 +25,15 @@ export interface SanityImage {
     _type: "reference";
   };
   alt?: string;
+}
+
+// SEO fields that can be added to any page
+export interface PageSEO {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+  ogImage?: SanityImage;
+  keywords?: string[];
 }
 
 export interface HeroContent {
@@ -42,6 +50,7 @@ export interface HeroContent {
     text: string;
     link: string;
   };
+  seo?: PageSEO;
 }
 
 export interface Skill {
@@ -61,6 +70,7 @@ export interface Activity {
   date: string;
   category: string;
   image?: SanityImage;
+  images?: SanityImage[];
   link?: string;
 }
 
@@ -127,6 +137,31 @@ export interface SiteSettings {
   };
 }
 
+// Page-specific content types with SEO
+export interface PageContent {
+  _id: string;
+  pageId: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  seo?: PageSEO;
+}
+
+export interface NavigationItem {
+  _id: string;
+  label: string;
+  path: string;
+  order: number;
+}
+
+export interface QuickLink {
+  _id: string;
+  title: string;
+  description: string;
+  link: string;
+  order: number;
+}
+
 // GROQ Queries
 export const queries = {
   heroContent: `*[_type == "heroContent"][0]`,
@@ -138,13 +173,17 @@ export const queries = {
   projects: `*[_type == "project"] | order(order asc)`,
   featuredProjects: `*[_type == "project" && featured == true] | order(order asc)`,
   siteSettings: `*[_type == "siteSettings"][0]`,
+  pageContent: (pageId: string) => `*[_type == "pageContent" && pageId == "${pageId}"][0]`,
+  navigation: `*[_type == "navigationItem"] | order(order asc)`,
+  quickLinks: `*[_type == "quickLink"] | order(order asc)`,
 };
 
-// Fetch functions with fallback data
+// Fetch functions - no fallback data, returns null/empty array when not available
 export async function fetchHeroContent(): Promise<HeroContent | null> {
   try {
     return await sanityClient.fetch(queries.heroContent);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch hero content from Sanity:", error);
     return null;
   }
 }
@@ -152,7 +191,8 @@ export async function fetchHeroContent(): Promise<HeroContent | null> {
 export async function fetchSkills(): Promise<Skill[]> {
   try {
     return await sanityClient.fetch(queries.skills);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch skills from Sanity:", error);
     return [];
   }
 }
@@ -160,7 +200,8 @@ export async function fetchSkills(): Promise<Skill[]> {
 export async function fetchActivities(): Promise<Activity[]> {
   try {
     return await sanityClient.fetch(queries.activities);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch activities from Sanity:", error);
     return [];
   }
 }
@@ -168,7 +209,8 @@ export async function fetchActivities(): Promise<Activity[]> {
 export async function fetchCertifications(): Promise<Certification[]> {
   try {
     return await sanityClient.fetch(queries.certifications);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch certifications from Sanity:", error);
     return [];
   }
 }
@@ -176,7 +218,8 @@ export async function fetchCertifications(): Promise<Certification[]> {
 export async function fetchExperiences(): Promise<Experience[]> {
   try {
     return await sanityClient.fetch(queries.experiences);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch experiences from Sanity:", error);
     return [];
   }
 }
@@ -184,7 +227,8 @@ export async function fetchExperiences(): Promise<Experience[]> {
 export async function fetchEducation(): Promise<Education[]> {
   try {
     return await sanityClient.fetch(queries.education);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch education from Sanity:", error);
     return [];
   }
 }
@@ -192,7 +236,8 @@ export async function fetchEducation(): Promise<Education[]> {
 export async function fetchProjects(): Promise<Project[]> {
   try {
     return await sanityClient.fetch(queries.projects);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch projects from Sanity:", error);
     return [];
   }
 }
@@ -200,7 +245,35 @@ export async function fetchProjects(): Promise<Project[]> {
 export async function fetchSiteSettings(): Promise<SiteSettings | null> {
   try {
     return await sanityClient.fetch(queries.siteSettings);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch site settings from Sanity:", error);
     return null;
+  }
+}
+
+export async function fetchPageContent(pageId: string): Promise<PageContent | null> {
+  try {
+    return await sanityClient.fetch(queries.pageContent(pageId));
+  } catch (error) {
+    console.error(`Failed to fetch page content for ${pageId} from Sanity:`, error);
+    return null;
+  }
+}
+
+export async function fetchNavigation(): Promise<NavigationItem[]> {
+  try {
+    return await sanityClient.fetch(queries.navigation);
+  } catch (error) {
+    console.error("Failed to fetch navigation from Sanity:", error);
+    return [];
+  }
+}
+
+export async function fetchQuickLinks(): Promise<QuickLink[]> {
+  try {
+    return await sanityClient.fetch(queries.quickLinks);
+  } catch (error) {
+    console.error("Failed to fetch quick links from Sanity:", error);
+    return [];
   }
 }

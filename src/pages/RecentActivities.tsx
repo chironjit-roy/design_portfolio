@@ -1,9 +1,11 @@
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Calendar, Tag, ExternalLink } from "lucide-react";
-import { useActivities, useSiteSettings } from "@/hooks/useSanityData";
-import { urlFor } from "@/lib/sanity";
+import { useActivities, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
+import { urlFor, SanityImage } from "@/lib/sanity";
 import Footer from "@/components/Footer";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
+import ActivityImageSlider from "@/components/ActivityImageSlider";
 
 const categoryColors: Record<string, string> = {
   Project: "bg-blue-500/20 text-blue-400",
@@ -16,13 +18,16 @@ const categoryColors: Record<string, string> = {
 const RecentActivities = () => {
   const { data: activities, isLoading } = useActivities();
   const { data: settings } = useSiteSettings();
+  const { data: pageContent } = usePageContent("activities");
 
   return (
     <>
-      <Helmet>
-        <title>Recent Activities | {settings?.name || "CAD Engineer"}</title>
-        <meta name="description" content="Stay updated with my latest projects, certifications, publications, and professional activities." />
-      </Helmet>
+      <PageSEO
+        seo={pageContent?.seo}
+        fallbackTitle={pageContent?.title || "Recent Activities"}
+        fallbackDescription={pageContent?.description || "Latest projects and activities"}
+        siteName={settings?.name}
+      />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -32,13 +37,24 @@ const RecentActivities = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <span className="section-number">RECENT ACTIVITIES</span>
+            <span className="section-number">{pageContent?.subtitle || "RECENT ACTIVITIES"}</span>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mt-4">
-              What I've Been <span className="text-gradient">Up To</span>
+              {pageContent?.title ? (
+                <>
+                  {pageContent.title.split(" ")[0]}{" "}
+                  <span className="text-gradient">{pageContent.title.split(" ").slice(1).join(" ")}</span>
+                </>
+              ) : (
+                <>
+                  What I've Been <span className="text-gradient">Up To</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              A timeline of my recent projects, achievements, certifications, and professional activities.
-            </p>
+            {pageContent?.description && (
+              <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                {pageContent.description}
+              </p>
+            )}
           </motion.div>
 
           {/* Activities Timeline */}
@@ -46,13 +62,13 @@ const RecentActivities = () => {
             <div className="flex justify-center">
               <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : activities && activities.length > 0 ? (
             <div className="max-w-4xl mx-auto">
               <div className="relative">
                 {/* Timeline Line */}
                 <div className="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-border md:-translate-x-1/2" />
 
-                {activities?.map((activity, index) => (
+                {activities.map((activity, index) => (
                   <motion.div
                     key={activity._id}
                     initial={{ opacity: 0, y: 30 }}
@@ -81,16 +97,18 @@ const RecentActivities = () => {
                         {activity.category}
                       </div>
 
-                      {/* Image if available */}
-                      {activity.image?.asset && (
-                        <div className="mb-4 overflow-hidden border border-border">
-                          <img
-                            src={urlFor(activity.image).width(600).url()}
-                            alt={activity.title}
-                            className="w-full h-48 object-cover"
-                          />
-                        </div>
-                      )}
+                      {/* Image Slider - supports multiple images or single image */}
+                      {(() => {
+                        const allImages: SanityImage[] = [];
+                        if (activity.images && activity.images.length > 0) {
+                          allImages.push(...activity.images.filter(img => img?.asset));
+                        } else if (activity.image?.asset) {
+                          allImages.push(activity.image);
+                        }
+                        return allImages.length > 0 ? (
+                          <ActivityImageSlider images={allImages} title={activity.title} />
+                        ) : null;
+                      })()}
 
                       <h3 className="text-xl font-heading font-semibold mb-2">{activity.title}</h3>
                       <p className="text-muted-foreground mb-4">{activity.description}</p>
@@ -121,6 +139,11 @@ const RecentActivities = () => {
                 ))}
               </div>
             </div>
+          ) : (
+            <EmptyState
+              title="No Activities Added"
+              message="Add activities in Sanity CMS to display them here."
+            />
           )}
         </div>
       </main>

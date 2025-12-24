@@ -1,8 +1,9 @@
-import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Download, Briefcase, GraduationCap, MapPin, Calendar } from "lucide-react";
-import { useExperiences, useEducation, useSiteSettings } from "@/hooks/useSanityData";
+import { useExperiences, useEducation, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
 import Footer from "@/components/Footer";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
 
 const TimelineItem = ({
   title,
@@ -79,15 +80,19 @@ const CurriculumVitae = () => {
   const { data: experiences, isLoading: expLoading } = useExperiences();
   const { data: education, isLoading: eduLoading } = useEducation();
   const { data: settings } = useSiteSettings();
+  const { data: pageContent } = usePageContent("cv");
 
   const isLoading = expLoading || eduLoading;
+  const hasContent = (experiences && experiences.length > 0) || (education && education.length > 0);
 
   return (
     <>
-      <Helmet>
-        <title>Curriculum Vitae | {settings?.name || "CAD Engineer"}</title>
-        <meta name="description" content="View my professional experience, education, and career history in CAD engineering." />
-      </Helmet>
+      <PageSEO
+        seo={pageContent?.seo}
+        fallbackTitle={pageContent?.title || "Curriculum Vitae"}
+        fallbackDescription={pageContent?.description || "Professional experience and education"}
+        siteName={settings?.name}
+      />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -97,86 +102,108 @@ const CurriculumVitae = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <span className="section-number">CURRICULUM VITAE</span>
+            <span className="section-number">{pageContent?.subtitle || "CURRICULUM VITAE"}</span>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mt-4">
-              Professional <span className="text-gradient">Journey</span>
+              {pageContent?.title ? (
+                <>
+                  {pageContent.title.split(" ")[0]}{" "}
+                  <span className="text-gradient">{pageContent.title.split(" ").slice(1).join(" ")}</span>
+                </>
+              ) : (
+                <>
+                  Professional <span className="text-gradient">Journey</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              A comprehensive overview of my professional experience and educational background in CAD engineering.
-            </p>
+            {pageContent?.description && (
+              <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                {pageContent.description}
+              </p>
+            )}
 
             {/* Download Button */}
-            <motion.a
-              href={settings?.resumeUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="inline-flex items-center gap-2 px-8 py-4 mt-8 bg-accent text-accent-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:bg-accent/90"
-            >
-              <Download size={18} />
-              Download CV
-            </motion.a>
+            {settings?.resumeUrl && (
+              <motion.a
+                href={settings.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="inline-flex items-center gap-2 px-8 py-4 mt-8 bg-accent text-accent-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:bg-accent/90"
+              >
+                <Download size={18} />
+                Download CV
+              </motion.a>
+            )}
           </motion.div>
 
           {isLoading ? (
             <div className="flex justify-center">
               <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : hasContent ? (
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Experience Column */}
-              <div>
-                <div className="flex items-center gap-4 mb-8">
-                  <Briefcase className="text-accent" size={24} />
-                  <h2 className="text-2xl font-heading font-semibold">Experience</h2>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
+              {experiences && experiences.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <Briefcase className="text-accent" size={24} />
+                    <h2 className="text-2xl font-heading font-semibold">Experience</h2>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
 
-                <div className="space-y-0">
-                  {experiences?.map((exp, index) => (
-                    <TimelineItem
-                      key={exp._id}
-                      title={exp.title}
-                      subtitle={exp.company}
-                      location={exp.location}
-                      startDate={exp.startDate}
-                      endDate={exp.endDate}
-                      current={exp.current}
-                      description={exp.description}
-                      index={index}
-                      type="experience"
-                    />
-                  ))}
+                  <div className="space-y-0">
+                    {experiences.map((exp, index) => (
+                      <TimelineItem
+                        key={exp._id}
+                        title={exp.title}
+                        subtitle={exp.company}
+                        location={exp.location}
+                        startDate={exp.startDate}
+                        endDate={exp.endDate}
+                        current={exp.current}
+                        description={exp.description}
+                        index={index}
+                        type="experience"
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Education Column */}
-              <div>
-                <div className="flex items-center gap-4 mb-8">
-                  <GraduationCap className="text-accent" size={24} />
-                  <h2 className="text-2xl font-heading font-semibold">Education</h2>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
+              {education && education.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <GraduationCap className="text-accent" size={24} />
+                    <h2 className="text-2xl font-heading font-semibold">Education</h2>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
 
-                <div className="space-y-0">
-                  {education?.map((edu, index) => (
-                    <TimelineItem
-                      key={edu._id}
-                      title={edu.degree}
-                      subtitle={edu.institution}
-                      location={edu.location}
-                      startDate={edu.startYear}
-                      endDate={edu.endYear}
-                      description={edu.description ? [edu.description] : undefined}
-                      index={index}
-                      type="education"
-                    />
-                  ))}
+                  <div className="space-y-0">
+                    {education.map((edu, index) => (
+                      <TimelineItem
+                        key={edu._id}
+                        title={edu.degree}
+                        subtitle={edu.institution}
+                        location={edu.location}
+                        startDate={edu.startYear}
+                        endDate={edu.endYear}
+                        description={edu.description ? [edu.description] : undefined}
+                        index={index}
+                        type="education"
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
+          ) : (
+            <EmptyState
+              title="No CV Content Added"
+              message="Add experience and education in Sanity CMS to display them here."
+            />
           )}
         </div>
       </main>

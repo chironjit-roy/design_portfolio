@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ExternalLink } from "lucide-react";
-import { useProjects, useSiteSettings } from "@/hooks/useSanityData";
+import { X } from "lucide-react";
+import { useProjects, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
 import { urlFor, type Project } from "@/lib/sanity";
 import Footer from "@/components/Footer";
+import PageSEO from "@/components/PageSEO";
+import EmptyState from "@/components/EmptyState";
 
 // Placeholder images for demo
 const placeholderImages = [
@@ -37,11 +38,11 @@ const ProjectCard = ({
       className="group cursor-pointer"
     >
       <div className="relative overflow-hidden border border-border bg-card card-lift">
-        <div className="aspect-[4/3] overflow-hidden">
+        <div className="aspect-[4/3] overflow-hidden bg-secondary flex items-center justify-center">
           <img
             src={imageUrl}
             alt={project.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -94,11 +95,11 @@ const ProjectModal = ({
         </button>
 
         {/* Image */}
-        <div className="aspect-video overflow-hidden">
+        <div className="aspect-video overflow-hidden bg-secondary flex items-center justify-center">
           <img
             src={imageUrl}
             alt={project.title}
-            className="w-full h-full object-cover"
+            className="max-w-full max-h-full w-auto h-auto object-contain"
           />
         </div>
 
@@ -149,6 +150,7 @@ const ProjectModal = ({
 const Designs = () => {
   const { data: projects, isLoading } = useProjects();
   const { data: settings } = useSiteSettings();
+  const { data: pageContent } = usePageContent("designs");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -162,10 +164,12 @@ const Designs = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Designs | {settings?.name || "CAD Engineer"}</title>
-        <meta name="description" content="Explore my portfolio of CAD designs, mechanical engineering projects, and 3D modeling work." />
-      </Helmet>
+      <PageSEO
+        seo={pageContent?.seo}
+        fallbackTitle={pageContent?.title || "Designs"}
+        fallbackDescription={pageContent?.description || "CAD designs and engineering portfolio"}
+        siteName={settings?.name}
+      />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -175,43 +179,56 @@ const Designs = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <span className="section-number">DESIGN PORTFOLIO</span>
+            <span className="section-number">{pageContent?.subtitle || "DESIGN PORTFOLIO"}</span>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mt-4">
-              Engineering <span className="text-gradient">Designs</span>
+              {pageContent?.title ? (
+                <>
+                  {pageContent.title.split(" ")[0]}{" "}
+                  <span className="text-gradient">{pageContent.title.split(" ").slice(1).join(" ")}</span>
+                </>
+              ) : (
+                <>
+                  Engineering <span className="text-gradient">Designs</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-              A showcase of my CAD projects, mechanical designs, and engineering solutions across various industries.
-            </p>
+            {pageContent?.description && (
+              <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                {pageContent.description}
+              </p>
+            )}
           </motion.div>
 
           {/* Category Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-wrap justify-center gap-4 mb-12"
-          >
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={`px-6 py-2 text-sm font-heading font-medium tracking-wide uppercase transition-all duration-300 border ${
-                  activeCategory === category
-                    ? "bg-accent text-accent-foreground border-accent"
-                    : "border-border text-muted-foreground hover:border-accent hover:text-accent"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </motion.div>
+          {projects && projects.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex flex-wrap justify-center gap-4 mb-12"
+            >
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-6 py-2 text-sm font-heading font-medium tracking-wide uppercase transition-all duration-300 border ${
+                    activeCategory === category
+                      ? "bg-accent text-accent-foreground border-accent"
+                      : "border-border text-muted-foreground hover:border-accent hover:text-accent"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </motion.div>
+          )}
 
           {/* Projects Grid */}
           {isLoading ? (
             <div className="flex justify-center">
               <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : projects && projects.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects?.map((project, index) => (
                 <ProjectCard
@@ -225,6 +242,11 @@ const Designs = () => {
                 />
               ))}
             </div>
+          ) : (
+            <EmptyState
+              title="No Projects Added"
+              message="Add projects in Sanity CMS to display them here."
+            />
           )}
         </div>
       </main>
