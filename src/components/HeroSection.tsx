@@ -1,10 +1,15 @@
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useHeroContent, useSiteSettings } from "@/hooks/useSanityData";
+import { urlFor } from "@/lib/sanity";
 
 const HeroSection = () => {
   const { data: heroContent } = useHeroContent();
   const { data: settings } = useSiteSettings();
+
+  const heroImageUrl = heroContent?.heroImage?.asset?._ref
+    ? urlFor(heroContent.heroImage).width(600).height(600).url()
+    : null;
 
   return (
     <section
@@ -21,9 +26,9 @@ const HeroSection = () => {
       <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
           {/* Left Content */}
-          <div className="space-y-8">
+          <div className="flex-1 space-y-6 lg:space-y-8 text-center lg:text-left">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -36,7 +41,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight"
             >
               {heroContent?.title || settings?.name || "CAD"}
               <br />
@@ -47,7 +52,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="text-xl md:text-2xl text-muted-foreground font-light max-w-lg"
+              className="text-lg sm:text-xl md:text-2xl text-muted-foreground font-light max-w-lg mx-auto lg:mx-0"
             >
               {heroContent?.tagline || "Engineering precision through CAD mastery."}
             </motion.p>
@@ -56,17 +61,17 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="flex gap-4 pt-4"
+              className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4"
             >
               <a
                 href={heroContent?.ctaPrimary?.link || "#portfolio"}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-accent-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:bg-accent/90"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-accent text-accent-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:bg-accent/90"
               >
                 {heroContent?.ctaPrimary?.text || "View Work"}
               </a>
               <a
                 href={heroContent?.ctaSecondary?.link || "#contact"}
-                className="inline-flex items-center gap-2 px-8 py-4 border border-border text-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:border-accent hover:text-accent"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 border border-border text-foreground font-heading font-semibold text-sm tracking-wide uppercase transition-all duration-400 hover:border-accent hover:text-accent"
               >
                 {heroContent?.ctaSecondary?.text || "Contact"}
               </a>
@@ -78,31 +83,39 @@ const HeroSection = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.4 }}
-            className="relative hidden lg:block"
+            className="flex-shrink-0 w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px]"
           >
-            <div className="relative aspect-square max-w-lg mx-auto">
+            <div className="relative aspect-square">
               {/* Outer Ring */}
               <div className="absolute inset-0 border border-border rounded-full animate-spin" style={{ animationDuration: '30s' }} />
               
               {/* Middle Ring */}
-              <div className="absolute inset-8 border border-accent/30 rounded-full animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
+              <div className="absolute inset-4 sm:inset-6 md:inset-8 border border-accent/30 rounded-full animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
               
               {/* Inner Ring */}
-              <div className="absolute inset-16 border border-border rounded-full animate-spin" style={{ animationDuration: '15s' }} />
+              <div className="absolute inset-8 sm:inset-12 md:inset-16 border border-border rounded-full animate-spin" style={{ animationDuration: '15s' }} />
 
-              {/* Center Element */}
-              <div className="absolute inset-24 bg-card border border-border flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl font-heading font-bold text-accent">CAD</div>
-                  <div className="text-sm text-muted-foreground tracking-widest mt-2">PRECISION</div>
-                </div>
+              {/* Center Element with Hero Image or Default */}
+              <div className="absolute inset-12 sm:inset-16 md:inset-20 bg-card border border-border flex items-center justify-center overflow-hidden">
+                {heroImageUrl ? (
+                  <img
+                    src={heroImageUrl}
+                    alt={heroContent?.title || "Hero"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-2">
+                    <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-accent">CAD</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground tracking-widest mt-1">PRECISION</div>
+                  </div>
+                )}
               </div>
 
               {/* Corner Markers */}
-              <div className="absolute top-0 left-1/2 w-px h-8 bg-accent/50" />
-              <div className="absolute bottom-0 left-1/2 w-px h-8 bg-accent/50" />
-              <div className="absolute left-0 top-1/2 w-8 h-px bg-accent/50" />
-              <div className="absolute right-0 top-1/2 w-8 h-px bg-accent/50" />
+              <div className="absolute top-0 left-1/2 w-px h-4 sm:h-6 md:h-8 bg-accent/50" />
+              <div className="absolute bottom-0 left-1/2 w-px h-4 sm:h-6 md:h-8 bg-accent/50" />
+              <div className="absolute left-0 top-1/2 w-4 sm:w-6 md:w-8 h-px bg-accent/50" />
+              <div className="absolute right-0 top-1/2 w-4 sm:w-6 md:w-8 h-px bg-accent/50" />
             </div>
           </motion.div>
         </div>

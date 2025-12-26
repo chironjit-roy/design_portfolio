@@ -1,10 +1,16 @@
 import { createClient } from "@sanity/client";
 import imageUrlBuilder from "@sanity/image-url";
 
+// Check if Sanity is properly configured
+const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
+const dataset = import.meta.env.VITE_SANITY_DATASET || "production";
+
+export const isSanityConfigured = Boolean(projectId && projectId !== "your-project-id");
+
 // Sanity client configuration
 export const sanityClient = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID || "your-project-id",
-  dataset: import.meta.env.VITE_SANITY_DATASET || "production",
+  projectId: projectId || "placeholder",
+  dataset: dataset,
   useCdn: true,
   apiVersion: "2024-01-01",
 });
@@ -13,7 +19,20 @@ export const sanityClient = createClient({
 const builder = imageUrlBuilder(sanityClient);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function urlFor(source: any) {
+export type SanityImageSource = any;
+
+// Smart crop for thumbnails - focuses on main subject using entropy detection
+export function urlForCropped(source: SanityImageSource) {
+  return builder.image(source).fit("crop").crop("entropy").auto("format");
+}
+
+// Full quality image for lightbox viewing
+export function urlForFull(source: SanityImageSource) {
+  return builder.image(source).fit("max").auto("format").quality(90);
+}
+
+// Default - for backward compatibility
+export function urlFor(source: SanityImageSource) {
   return builder.image(source).fit("max").auto("format");
 }
 
@@ -59,6 +78,7 @@ export interface Skill {
   category: string;
   proficiency: number;
   icon?: string;
+  logo?: SanityImage;
   description?: string;
   order: number;
 }
@@ -114,6 +134,7 @@ export interface Project {
   category: string;
   description: string;
   image: SanityImage;
+  images?: SanityImage[];
   problem?: string;
   solution?: string;
   tools?: string[];
@@ -178,8 +199,9 @@ export const queries = {
   quickLinks: `*[_type == "quickLink"] | order(order asc)`,
 };
 
-// Fetch functions - no fallback data, returns null/empty array when not available
+// Fetch functions - skip network requests if Sanity isn't configured
 export async function fetchHeroContent(): Promise<HeroContent | null> {
+  if (!isSanityConfigured) return null;
   try {
     return await sanityClient.fetch(queries.heroContent);
   } catch (error) {
@@ -189,6 +211,7 @@ export async function fetchHeroContent(): Promise<HeroContent | null> {
 }
 
 export async function fetchSkills(): Promise<Skill[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.skills);
   } catch (error) {
@@ -198,6 +221,7 @@ export async function fetchSkills(): Promise<Skill[]> {
 }
 
 export async function fetchActivities(): Promise<Activity[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.activities);
   } catch (error) {
@@ -207,6 +231,7 @@ export async function fetchActivities(): Promise<Activity[]> {
 }
 
 export async function fetchCertifications(): Promise<Certification[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.certifications);
   } catch (error) {
@@ -216,6 +241,7 @@ export async function fetchCertifications(): Promise<Certification[]> {
 }
 
 export async function fetchExperiences(): Promise<Experience[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.experiences);
   } catch (error) {
@@ -225,6 +251,7 @@ export async function fetchExperiences(): Promise<Experience[]> {
 }
 
 export async function fetchEducation(): Promise<Education[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.education);
   } catch (error) {
@@ -234,6 +261,7 @@ export async function fetchEducation(): Promise<Education[]> {
 }
 
 export async function fetchProjects(): Promise<Project[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.projects);
   } catch (error) {
@@ -243,6 +271,7 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 export async function fetchSiteSettings(): Promise<SiteSettings | null> {
+  if (!isSanityConfigured) return null;
   try {
     return await sanityClient.fetch(queries.siteSettings);
   } catch (error) {
@@ -252,6 +281,7 @@ export async function fetchSiteSettings(): Promise<SiteSettings | null> {
 }
 
 export async function fetchPageContent(pageId: string): Promise<PageContent | null> {
+  if (!isSanityConfigured) return null;
   try {
     return await sanityClient.fetch(queries.pageContent(pageId));
   } catch (error) {
@@ -261,6 +291,7 @@ export async function fetchPageContent(pageId: string): Promise<PageContent | nu
 }
 
 export async function fetchNavigation(): Promise<NavigationItem[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.navigation);
   } catch (error) {
@@ -270,6 +301,7 @@ export async function fetchNavigation(): Promise<NavigationItem[]> {
 }
 
 export async function fetchQuickLinks(): Promise<QuickLink[]> {
+  if (!isSanityConfigured) return [];
   try {
     return await sanityClient.fetch(queries.quickLinks);
   } catch (error) {

@@ -3,7 +3,8 @@ import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import { useProjects } from "@/hooks/useSanityData";
-import { urlFor, type Project } from "@/lib/sanity";
+import { urlForCropped, urlForFull, type Project } from "@/lib/sanity";
+import ImageLightbox from "./ImageLightbox";
 
 const placeholderImages = [
   "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&q=80",
@@ -21,7 +22,7 @@ const ProjectCard = ({ project, index, onClick }: {
   const isInView = useInView(ref, { once: true, margin: "-50px" });
 
   const imageUrl = project.image?.asset?._ref
-    ? urlFor(project.image).width(800).height(600).url()
+    ? urlForCropped(project.image).width(800).height(600).url()
     : placeholderImages[index % placeholderImages.length];
 
   return (
@@ -34,11 +35,11 @@ const ProjectCard = ({ project, index, onClick }: {
       className="group cursor-pointer"
     >
       {/* Image */}
-      <div className="aspect-[4/3] bg-secondary border border-border mb-6 overflow-hidden relative flex items-center justify-center">
+      <div className="aspect-[4/3] bg-secondary border border-border mb-6 overflow-hidden relative">
         <img
           src={imageUrl}
           alt={project.title}
-          className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         
         {/* Hover Overlay */}
@@ -70,99 +71,118 @@ const ProjectModal = ({ project, onClose, index }: {
   onClose: () => void;
   index: number;
 }) => {
-  const imageUrl = project.image?.asset?._ref
-    ? urlFor(project.image).width(1200).url()
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  
+  const thumbnailUrl = project.image?.asset?._ref
+    ? urlForCropped(project.image).width(1200).height(675).url()
+    : placeholderImages[index % placeholderImages.length];
+
+  const fullImageUrl = project.image?.asset?._ref
+    ? urlForFull(project.image).url()
     : placeholderImages[index % placeholderImages.length];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-6"
-      onClick={onClose}
-    >
+    <>
       <motion.div
-        initial={{ opacity: 0, y: 50, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 50, scale: 0.95 }}
-        transition={{ duration: 0.4 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-card border border-border max-w-3xl w-full max-h-[90vh] overflow-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-6"
+        onClick={onClose}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between p-8 border-b border-border">
-          <div>
-            <span className="text-xs text-accent tracking-widest uppercase">
-              {project.category}
-            </span>
-            <h2 className="font-heading font-bold text-3xl mt-2">{project.title}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-secondary transition-colors"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-8 space-y-8">
-          {/* Preview */}
-          <div className="aspect-video overflow-hidden border border-border bg-secondary flex items-center justify-center">
-            <img
-              src={imageUrl}
-              alt={project.title}
-              className="max-w-full max-h-full w-auto h-auto object-contain"
-            />
-          </div>
-
-          {/* Description */}
-          <p className="text-muted-foreground text-lg">{project.description}</p>
-
-          {/* Problem & Solution */}
-          {(project.problem || project.solution) && (
-            <div className="grid md:grid-cols-2 gap-8">
-              {project.problem && (
-                <div className="space-y-3">
-                  <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
-                    Problem
-                  </h4>
-                  <p className="text-muted-foreground">{project.problem}</p>
-                </div>
-              )}
-              {project.solution && (
-                <div className="space-y-3">
-                  <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
-                    Solution
-                  </h4>
-                  <p className="text-muted-foreground">{project.solution}</p>
-                </div>
-              )}
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 50, scale: 0.95 }}
+          transition={{ duration: 0.4 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-card border border-border max-w-3xl w-full max-h-[90vh] overflow-auto"
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between p-8 border-b border-border">
+            <div>
+              <span className="text-xs text-accent tracking-widest uppercase">
+                {project.category}
+              </span>
+              <h2 className="font-heading font-bold text-3xl mt-2">{project.title}</h2>
             </div>
-          )}
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-secondary transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
 
-          {/* Tools */}
-          {project.tools && project.tools.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
-                Tools Used
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {project.tools.map((tool) => (
-                  <span
-                    key={tool}
-                    className="px-4 py-2 bg-secondary border border-border text-sm"
-                  >
-                    {tool}
-                  </span>
-                ))}
+          {/* Content */}
+          <div className="p-8 space-y-8">
+            {/* Preview - Clickable for lightbox */}
+            <div 
+              className="aspect-video overflow-hidden border border-border bg-secondary cursor-pointer group"
+              onClick={() => setLightboxOpen(true)}
+            >
+              <img
+                src={thumbnailUrl}
+                alt={project.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+
+            {/* Description */}
+            <p className="text-muted-foreground text-lg">{project.description}</p>
+
+            {/* Problem & Solution */}
+            {(project.problem || project.solution) && (
+              <div className="grid md:grid-cols-2 gap-8">
+                {project.problem && (
+                  <div className="space-y-3">
+                    <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
+                      Problem
+                    </h4>
+                    <p className="text-muted-foreground">{project.problem}</p>
+                  </div>
+                )}
+                {project.solution && (
+                  <div className="space-y-3">
+                    <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
+                      Solution
+                    </h4>
+                    <p className="text-muted-foreground">{project.solution}</p>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* Tools */}
+            {project.tools && project.tools.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-heading font-semibold text-sm tracking-widest uppercase text-accent">
+                  Tools Used
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {project.tools.map((tool) => (
+                    <span
+                      key={tool}
+                      className="px-4 py-2 bg-secondary border border-border text-sm"
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+
+      {/* Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        imageUrl={fullImageUrl}
+        alt={project.title}
+      />
+    </>
   );
 };
 

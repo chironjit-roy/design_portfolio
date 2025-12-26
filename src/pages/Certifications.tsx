@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Award, ExternalLink, Calendar } from "lucide-react";
 import { useCertifications, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
-import { urlFor } from "@/lib/sanity";
+import { urlForCropped, urlForFull } from "@/lib/sanity";
 import Footer from "@/components/Footer";
 import PageSEO from "@/components/PageSEO";
 import EmptyState from "@/components/EmptyState";
+import ImageLightbox from "@/components/ImageLightbox";
 
 const CertificationCard = ({
   title,
@@ -22,57 +24,74 @@ const CertificationCard = ({
   image?: any;
   index: number;
 }) => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
-      className="bg-card border border-border p-6 card-lift group relative overflow-hidden"
-    >
-      {/* Badge Icon */}
-      <div className="absolute top-4 right-4 text-accent/20 group-hover:text-accent/40 transition-colors">
-        <Award size={48} />
-      </div>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: index * 0.1 }}
+        className="bg-card border border-border p-6 card-lift group relative overflow-hidden"
+      >
+        {/* Badge Icon */}
+        <div className="absolute top-4 right-4 text-accent/20 group-hover:text-accent/40 transition-colors">
+          <Award size={48} />
+        </div>
 
-      {/* Certificate Image if available */}
+        {/* Certificate Image if available - Clickable for lightbox */}
+        {image?.asset && (
+          <div 
+            className="mb-4 overflow-hidden border border-border bg-secondary h-40 cursor-pointer"
+            onClick={() => setLightboxOpen(true)}
+          >
+            <img
+              src={urlForCropped(image).width(400).height(160).url()}
+              alt={title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+        )}
+
+        <div className="relative z-10">
+          <h3 className="text-lg font-heading font-semibold mb-2 pr-12 group-hover:text-accent transition-colors">
+            {title}
+          </h3>
+
+          <p className="text-muted-foreground text-sm mb-4">{issuer}</p>
+
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+              <Calendar size={14} />
+              {year}
+            </span>
+
+            {credentialUrl && (
+              <a
+                href={credentialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+              >
+                <ExternalLink size={14} />
+                Verify
+              </a>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Lightbox for full image view */}
       {image?.asset && (
-        <div className="mb-4 overflow-hidden border border-border bg-secondary flex items-center justify-center h-40">
-          <img
-            src={urlFor(image).width(400).url()}
-            alt={title}
-            className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500"
-          />
-        </div>
+        <ImageLightbox
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          imageUrl={urlForFull(image).url()}
+          alt={title}
+        />
       )}
-
-      <div className="relative z-10">
-        <h3 className="text-lg font-heading font-semibold mb-2 pr-12 group-hover:text-accent transition-colors">
-          {title}
-        </h3>
-
-        <p className="text-muted-foreground text-sm mb-4">{issuer}</p>
-
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-            <Calendar size={14} />
-            {year}
-          </span>
-
-          {credentialUrl && (
-            <a
-              href={credentialUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
-            >
-              <ExternalLink size={14} />
-              Verify
-            </a>
-          )}
-        </div>
-      </div>
-    </motion.div>
+    </>
   );
 };
 

@@ -2,10 +2,11 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useProjects, useSiteSettings, usePageContent } from "@/hooks/useSanityData";
-import { urlFor, type Project } from "@/lib/sanity";
+import { urlForCropped, type Project } from "@/lib/sanity";
 import Footer from "@/components/Footer";
 import PageSEO from "@/components/PageSEO";
 import EmptyState from "@/components/EmptyState";
+import ProjectImageSlider from "@/components/ProjectImageSlider";
 
 // Placeholder images for demo
 const placeholderImages = [
@@ -24,8 +25,9 @@ const ProjectCard = ({
   index: number;
   onClick: () => void;
 }) => {
+  const hasMultipleImages = (project.images && project.images.length > 0) || project.image?.asset?._ref;
   const imageUrl = project.image?.asset?._ref
-    ? urlFor(project.image).width(800).height(600).url()
+    ? urlForCropped(project.image).width(800).height(600).url()
     : placeholderImages[index % placeholderImages.length];
 
   return (
@@ -34,20 +36,32 @@ const ProjectCard = ({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
-      onClick={onClick}
       className="group cursor-pointer"
     >
-      <div className="relative overflow-hidden border border-border bg-card card-lift">
-        <div className="aspect-[4/3] overflow-hidden bg-secondary flex items-center justify-center">
-          <img
-            src={imageUrl}
-            alt={project.title}
-            className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-105 transition-transform duration-500"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="relative overflow-hidden border border-border bg-card card-lift" onClick={onClick}>
+        {/* Image Slider or Single Image */}
+        {hasMultipleImages && project.image?.asset?._ref ? (
+          <div onClick={(e) => e.stopPropagation()}>
+            <ProjectImageSlider
+              images={project.images || []}
+              mainImage={project.image}
+              title={project.title}
+              aspectRatio="4/3"
+            />
+          </div>
+        ) : (
+          <div className="aspect-[4/3] overflow-hidden bg-secondary">
+            <img
+              src={imageUrl}
+              alt={project.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+        )}
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+        <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 pointer-events-none">
           <span className="text-xs text-accent font-medium tracking-wider uppercase">
             {project.category}
           </span>
@@ -61,16 +75,10 @@ const ProjectCard = ({
 const ProjectModal = ({
   project,
   onClose,
-  index,
 }: {
   project: Project;
   onClose: () => void;
-  index: number;
 }) => {
-  const imageUrl = project.image?.asset?._ref
-    ? urlFor(project.image).width(1200).url()
-    : placeholderImages[index % placeholderImages.length];
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -94,14 +102,13 @@ const ProjectModal = ({
           <X size={20} />
         </button>
 
-        {/* Image */}
-        <div className="aspect-video overflow-hidden bg-secondary flex items-center justify-center">
-          <img
-            src={imageUrl}
-            alt={project.title}
-            className="max-w-full max-h-full w-auto h-auto object-contain"
-          />
-        </div>
+        {/* Image Slider */}
+        <ProjectImageSlider
+          images={project.images || []}
+          mainImage={project.image}
+          title={project.title}
+          aspectRatio="video"
+        />
 
         {/* Content */}
         <div className="p-8">
@@ -152,7 +159,6 @@ const Designs = () => {
   const { data: settings } = useSiteSettings();
   const { data: pageContent } = usePageContent("designs");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState("All");
 
   const categories = ["All", ...new Set(projects?.map((p) => p.category) || [])];
@@ -235,10 +241,7 @@ const Designs = () => {
                   key={project._id}
                   project={project}
                   index={index}
-                  onClick={() => {
-                    setSelectedProject(project);
-                    setSelectedIndex(index);
-                  }}
+                  onClick={() => setSelectedProject(project)}
                 />
               ))}
             </div>
@@ -257,7 +260,6 @@ const Designs = () => {
           <ProjectModal
             project={selectedProject}
             onClose={() => setSelectedProject(null)}
-            index={selectedIndex}
           />
         )}
       </AnimatePresence>

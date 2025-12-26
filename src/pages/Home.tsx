@@ -130,9 +130,9 @@ const Home = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.4 }}
-              className="relative hidden lg:block"
+              className="relative"
             >
-              <div className="relative">
+              <div className="relative max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto">
                 {/* Image Frame */}
                 <div className="relative overflow-hidden border border-border">
                   <img

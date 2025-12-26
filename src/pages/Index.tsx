@@ -12,7 +12,7 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Chironjit Roy Portfolio | Precision Engineering & Design</title>
+        <title>CAD Engineer Portfolio | Precision Engineering & Design</title>
         <meta
           name="description"
           content="Professional CAD Engineer specializing in precision mechanical design, 3D modeling, and engineering solutions. View portfolio, certifications, and expertise."
