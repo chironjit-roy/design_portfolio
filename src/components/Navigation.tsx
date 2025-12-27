@@ -41,10 +41,10 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-10 h-10 border border-accent flex items-center justify-center">
-              <span className="font-heading font-bold text-accent text-lg">E</span>
+              <span className="font-heading font-bold text-accent text-lg">CR</span>
             </div>
             <span className="font-heading font-semibold text-foreground tracking-wide hidden sm:block">
-              ENGINEER
+              CHIRONJIT ROY PORTFOLIO
             </span>
           </Link>
 
